@@ -29,6 +29,7 @@ var (
 	ParameterEnableConsole bool
 )
 
+// 采集topic的struct
 type TopicInfo struct {
 	Name      string `json:"name"`
 	Partition int32  `json:"partition"`
@@ -39,6 +40,7 @@ func (this *TopicInfo) ToString() string {
 	return fmt.Sprintf("topic=%s,partition=%d", this.Name, this.Partition)
 }
 
+// 采集consumer的struct
 type ConsumerInfo struct {
 	ConsumerGroup string `json:"name"`
 	Topic         string `json:"topic"`
@@ -93,6 +95,7 @@ func main() {
 		returnErr(fmt.Sprintf("%s", err))
 	}
 
+	// 将topic监控数据处理成falcon识别的json数据
 	var data []map[string]interface{}
 	for _, topic := range topicInfo {
 		dt := make(map[string]interface{})
@@ -118,6 +121,7 @@ func main() {
 		data = append(data, dt)
 	}
 
+	// 对相同的consumer、topic的lags求和
 	for consumer, topicMap := range consumerAggInfo {
 		for topic, lagssum := range topicMap {
 			dt := make(map[string]interface{})
@@ -184,6 +188,7 @@ func getTopicConsumerGroupInfo(client sarama.Client) ([]*TopicInfo, []*ConsumerI
 
 	var groupList, topics []string
 
+	// 获取所有topic
 	if ParameterTopic == "" {
 		_topics, err := client.Topics()
 		if err != nil {
@@ -195,6 +200,7 @@ func getTopicConsumerGroupInfo(client sarama.Client) ([]*TopicInfo, []*ConsumerI
 		topics = strings.Split(ParameterTopic, ",")
 	}
 
+	//获取所有consumer group
 	if ParameterConsumer == "" {
 		groupList = getGroupList(client)
 	} else {
@@ -208,6 +214,7 @@ func getTopicConsumerGroupInfo(client sarama.Client) ([]*TopicInfo, []*ConsumerI
 			return nil, nil, nil, err
 		}
 
+		// 遍历topic的每一个partition
 		for _, pt := range partitions {
 
 			logOffset, err := client.GetOffset(topic, pt, sarama.OffsetNewest)
